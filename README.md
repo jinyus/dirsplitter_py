@@ -10,7 +10,7 @@ Split large directories into parts of a specified maximum size. This is a python
 How to run
 
 ```
-pip install click
+pip install -r reqs.txt
 python dirsplitter.py
 ```
 
