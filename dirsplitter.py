@@ -1,29 +1,36 @@
 import shutil
-import typer
+import click
 from pathlib import Path
 import re
 import traceback
 
 APP_VERSION = '1.0.0'
 
-app = typer.Typer(add_completion=False)
+
+@click.group()
+def cli():
+    pass
 
 
-@app.command()
+@click.command()
 def version():
-    typer.echo('Dirsplitter Version: %s' % APP_VERSION)
+    click.echo('Dirsplitter Version: %s' % APP_VERSION)
 
 
-@app.command(help='Split a directory into parts of a given size')
-def split(
-    directory: Path = typer.Argument(
-        '.', exists=True, file_okay=False, resolve_path=True),
-    max: float = typer.Option(
-        5.0, '-m', '--max', help='Size of each part in GB', show_default=True),
-    prefix: str = typer.Option(
-        '', help='Prefix for output files of the tar command. eg: myprefix.part1.tar')
-):
-    typer.confirm(
+@click.command(help='Split a directory into parts of a given size')
+@click.argument(
+    'directory', default='.',
+    type=click.Path(
+        exists=True,
+        file_okay=False,
+        resolve_path=True,
+        path_type=Path,
+    ),
+)
+@click.option('-m', '--max', default=5.0, help='Size of each part in GB', type=click.FLOAT, show_default=True)
+@click.option('-p', '--prefix', default='', help='Prefix for output files of the tar command. eg: myprefix.part1.tar')
+def split(directory: Path, max: float, prefix: str):
+    click.confirm(
         f'Split "{directory}" into parts of {max} GB', abort=True, default=True)
 
     tracker = {1: 0}
@@ -56,44 +63,45 @@ def split(
 
             files_moved += 1
         except Exception as e:
-            typer.echo('Failed to move file: %s' % f)
-            typer.echo(e)
+            click.echo('Failed to move file: %s' % f)
+            click.echo(e)
             print(traceback.format_exc())
 
             failed_ops += 1
 
-    typer.echo('Results:')
-    typer.echo(f'files moved: {files_moved}')
-    typer.echo(f'failed operations: {failed_ops}')
+    click.echo('Results:')
+    click.echo(f'files moved: {files_moved}')
+    click.echo(f'failed operations: {failed_ops}')
 
     # print the size of each part
     for part in tracker:
-        typer.echo(f'part{part}: {int(tracker[part] / 1024 / 1024)}MB')
+        click.echo(f'part{part}: {int(tracker[part] / 1024 / 1024)}MB')
 
     if prefix != '' and current_part > 0:
-        typer.echo('Tar Commands:')
+        click.echo('Tar Commands:')
         if current_part == 1:
-            typer.echo(
+            click.echo(
                 f'tar -cf "{prefix}part1.tar" "part1"; done')
         else:
-            typer.echo(
+            click.echo(
                 'for n in {1..%d}; do tar -cf "%spart$n.tar" "part$n"; done' % (current_part, prefix))
 
 
-@app.command(help='Reverse a split directory')
-def reverse(
-    directory: Path = typer.Argument(
-        '.',
+@click.command(help='Reverse a split directory')
+@click.argument(
+    'directory', default='.',
+    type=click.Path(
         exists=True,
         file_okay=False,
         resolve_path=True,
+        path_type=Path,
     ),
-
-):
-
+)
+def reverse(directory: Path):
+    # moves ./dir/part1/textfiles/file.txt to ./dir/textfiles/file.txt
     folders_to_remove: set[str] = set()
 
-    typer.confirm(f'Reverse split "{directory}"?', abort=True, default=True)
+    click.confirm(f'Reverse split "{directory}"?', abort=True, default=True)
     should_delete = True
 
     try:
@@ -105,14 +113,13 @@ def reverse(
                     if f.is_dir():
                         continue
 
-                    new_path = directory.joinpath(
-                        f.relative_to(item))
+                    new_path = directory.joinpath(f.relative_to(item))
                     f.rename(new_path)
 
                 folders_to_remove.add(item)
     except Exception as e:
-        typer.echo(f'Failed to move file')
-        typer.echo(e)
+        click.echo(f'Failed to move file')
+        click.echo(e)
         should_delete = False
 
     if should_delete:
@@ -120,9 +127,14 @@ def reverse(
             try:
                 shutil.rmtree(folder)
             except Exception as e:
-                typer.echo(f'Failed to remove folder: {folder}')
-                typer.echo(e)
+                click.echo(f'Failed to remove folder: {folder}')
+                click.echo(e)
+
+
+cli.add_command(version)
+cli.add_command(split)
+cli.add_command(reverse)
 
 
 if __name__ == '__main__':
-    app()
+    cli()
