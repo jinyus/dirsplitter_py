@@ -1,8 +1,9 @@
-import shutil
-import click
-from pathlib import Path
 import re
+import shutil
 import traceback
+from pathlib import Path
+
+import click
 
 APP_VERSION = '1.0.0'
 
@@ -77,14 +78,14 @@ def split(directory: Path, max: float, prefix: str):
     for part in tracker:
         click.echo(f'part{part}: {int(tracker[part] / 1024 / 1024)}MB')
 
-    if prefix != '' and current_part > 0:
-        click.echo('Tar Commands:')
-        if current_part == 1:
-            click.echo(
-                f'tar -cf "{prefix}part1.tar" "part1"; done')
-        else:
-            click.echo(
-                'for n in {1..%d}; do tar -cf "%spart$n.tar" "part$n"; done' % (current_part, prefix))
+
+    click.echo('\nTar Command:')
+    if current_part == 1:
+        click.echo(
+            f'tar -cf "{prefix}part1.tar" "part1"; done')
+    else:
+        click.echo(
+            'for n in {1..%d}; do tar -cf "%spart$n.tar" "part$n"; done' % (current_part, prefix))
 
 
 @click.command(help='Reverse a split directory')
