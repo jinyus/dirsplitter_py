@@ -2,9 +2,9 @@
 
 Split large directories into parts of a specified maximum size. This is a python port of my dirsplitter tool.
 
-[F# Version](https://github.com/jinyus/fs_dirsplitter) (more binaries available)<br>
+[Go version](https://github.com/jinyus/dirsplitter) (more binaries available)<br>
+[F# Version](https://github.com/jinyus/fs_dirsplitter) <br>
 [nim Version](https://github.com/jinyus/nim_dirsplitter)<br>
-[Go version](https://github.com/jinyus/dirsplitter)<br>
 [Crystal Version](https://github.com/jinyus/cr_dirsplitter)
 
 How to run
